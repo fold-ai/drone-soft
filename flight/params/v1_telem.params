@@ -1,0 +1,7 @@
+# PX4-class param sketch (names illustrative)
+MAV_1_CONFIG  TELEM2
+MAV_0_CONFIG  TELEM1
+SER_TEL1_BAUD 57600
+SER_TEL2_BAUD 57600
+NAV_RCL_ACT   RTL
+# Lost companion: rely on Orin HB age → RTB via safety (not FTS)

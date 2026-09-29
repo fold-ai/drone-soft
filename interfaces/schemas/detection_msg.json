@@ -1,0 +1,23 @@
+{
+  "name": "DetectionMsg",
+  "version": "1",
+  "fields": {
+    "t_pps": "float64",
+    "seq": "uint64",
+    "cam_id": "uint8",
+    "src_w": "uint16",
+    "src_h": "uint16",
+    "n": "uint32",
+    "boxes": {
+      "max": 32,
+      "fields": {
+        "x": "float32",
+        "y": "float32",
+        "w": "float32",
+        "h": "float32",
+        "conf": "float32",
+        "class_id": "uint32"
+      }
+    }
+  }
+}

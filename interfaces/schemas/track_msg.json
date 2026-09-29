@@ -1,0 +1,31 @@
+{
+  "name": "TrackMsg",
+  "version": "1",
+  "fields": {
+    "track_id": "uint32",
+    "measurement_epoch": "float64 — PPS domain of frames that formed update; REQUIRED",
+    "t_pps": "float64 — alias of measurement_epoch (must match)",
+    "t_publish_pps": "float64 — publish time debug only",
+    "state": "enum TrackState",
+    "lock_state": "enum LockState",
+    "cam_id": "uint8",
+    "u": "float32",
+    "v": "float32",
+    "bbox_w": "float32",
+    "bbox_h": "float32",
+    "range_est_m": "float32",
+    "bearing_ned_rad": ["float32", "float32"],
+    "lock_quality": "float32",
+    "class_id": "uint32",
+    "age_updates": "uint32",
+    "time_since_meas_s": "float32",
+    "handoff_phase": "enum HandoffPhase",
+    "cue_source": "uint8",
+    "onboard_owns": "bool",
+    "operator_lock_req": "bool"
+  },
+  "rules": [
+    "Coast updates keep measurement_epoch of last real measurement",
+    "Never use soft host now() for measurement_epoch"
+  ]
+}

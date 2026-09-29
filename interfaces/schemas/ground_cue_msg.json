@@ -1,0 +1,17 @@
+{
+  "name": "GroundCueMsg",
+  "version": "1",
+  "fields": {
+    "t_pps": "float64",
+    "u": "float32",
+    "v": "float32",
+    "bbox_w": "float32",
+    "bbox_h": "float32",
+    "src_w": "uint16",
+    "src_h": "uint16",
+    "class_id": "uint32",
+    "bearing_ned_rad": ["float32", "float32"],
+    "operator_lock_request": "bool",
+    "class_forced": "bool"
+  }
+}

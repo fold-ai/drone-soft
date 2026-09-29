@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MissionState",
+  "type": "object",
+  "required": ["t_pps", "state", "state_name"],
+  "properties": {
+    "t_pps": { "type": "number" },
+    "state": { "type": "integer", "minimum": 0, "maximum": 6 },
+    "state_name": {
+      "type": "string",
+      "enum": ["BOOT", "SEARCH", "LOCK", "CLOSE", "ABORT", "RTB", "FTS"]
+    },
+    "reason": { "type": "string" }
+  }
+}

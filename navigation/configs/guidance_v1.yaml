@@ -1,0 +1,42 @@
+# Navigation guidance V1 — commanded miss (not kill)
+# Owner: Navigation. Aligns with V1_PLAN §5 / §7 G3.
+
+mission:
+  active_states: [CLOSE]
+  setpoint_hz: 15
+  coast_lost_track_s: 1.5
+  max_track_age_s: 1.5
+
+miss:
+  # G3: commanded miss 15–30 m. Never 0.
+  distance_m_min: 15.0
+  distance_m_max: 30.0
+  distance_m_default: 20.0
+  side: left               # left | right — fixed per sortie card
+  vertical_offset_m: 0.0
+
+speed:
+  target_speed_mps_nominal: 27.8   # ~100 km/h cooperative
+  ownship_speed_mps_max: 55.6      # ~200 km/h V1 hard cap
+  approach_speed_mps: 45.0
+
+setpoint:
+  frame: LOCAL_NED
+  # Ignore pos/afx/yaw_rate; use vx,vy,vz,yaw — verify against PX4 when bridge lands
+  type_mask_vel_yaw: 0x09C7
+
+imu:
+  model: ADIS16470
+  mode: free_run_drdy      # never cam_fsync_sync
+  drdy_hw_timestamp: required
+  soft_stamp: reject
+
+# TEST_RECOVER soft-land (ABORT submode). SM gates via ap_mission_sm_land_soft_active().
+soft_land:
+  airspeed_cap_mps: 18.0
+  descent_rate_mps: 1.5          # NED +vz; clamp [1, 2]
+  bleed_duration_s: 5.0
+  disarm_timeout_s: 45.0
+  wow_alt_m: 2.0
+  fallback_disarm_airspeed_mps: 5.0
+  hold_heading: true

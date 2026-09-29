@@ -1,0 +1,28 @@
+# Cube Orange / ArduCopter — Orin companion on TELEM2
+# Load after a standard copter param set. Review in Mission Planner before flight.
+# RC: CH7 = Lock, CH8 = Takeover (PWM ≥1700). Pilot sticks always present on the RX.
+
+SERIAL2_PROTOCOL    2
+SERIAL2_BAUD        57
+SYSID_MYGCS         255
+
+# Stream RC and attitude to the companion (also requested at runtime)
+SR2_EXTRA1          10
+SR2_RCCHAN          10
+SR2_POSITION        4
+SR2_EXT_STAT        2
+
+# GUIDED velocity from companion (body frame)
+GUID_TIMEOUT        3.0
+
+# Failsafe: radio loss → RTL. Companion loss is also handled in software (3 s).
+FS_THR_ENABLE       1
+FS_THR_VALUE        975
+FS_OPTIONS          0
+
+# Keep RC override available so Takeover/sticks can reclaim immediately
+RC7_OPTION          0
+RC8_OPTION          0
+
+# Do not require a mission for GUIDED
+AUTO_OPTIONS        0
