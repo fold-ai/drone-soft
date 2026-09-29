@@ -1,0 +1,29 @@
+[Unit]
+Description=ActProve dual-camera detector (feeds companion IPC)
+After=actprove-companion.service
+Requires=actprove-companion.service
+ConditionPathExists=/opt/drone-soft/vision/build/dual_detect_node
+ConditionPathExists=/dev/video0
+
+[Service]
+Type=simple
+User=actprove
+Group=video
+WorkingDirectory=/opt/drone-soft/vision
+ExecStartPre=/usr/bin/python3 /opt/drone-soft/tools/orin_passive_readiness.py --runtime-only --allow-single-camera
+ExecStart=/opt/drone-soft/vision/build/dual_detect_node --search /dev/video0 --tele /dev/video1 --engine /opt/drone-soft/vision/models/engines/yolov8n_fp16.engine --frames 0 --ipc /run/actprove/detections.sock
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=10
+
+DevicePolicy=closed
+DeviceAllow=/dev/video0 rw
+DeviceAllow=/dev/video1 rw
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

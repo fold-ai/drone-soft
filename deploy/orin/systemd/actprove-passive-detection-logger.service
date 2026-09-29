@@ -1,0 +1,29 @@
+[Unit]
+Description=ActProve passive detection IPC logger
+After=local-fs.target
+ConditionPathExists=/opt/drone-soft/vision/build/detection_logger
+
+[Service]
+Type=simple
+User=actprove
+Group=video
+RuntimeDirectory=actprove
+RuntimeDirectoryMode=0750
+StateDirectory=actprove
+StateDirectoryMode=0750
+ExecStart=/opt/drone-soft/vision/build/detection_logger --socket /run/actprove/detections.sock --out /var/lib/actprove/detections.jsonl
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=5
+DevicePolicy=closed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

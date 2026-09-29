@@ -1,0 +1,58 @@
+vision/   # AUTHORITATIVE Perception V1 repo map (paste into V1_PLAN.md §4)
+├── README.md
+├── CMakeLists.txt                 # Orin NX, CUDA, TensorRT, Argus/V4L2
+├── cmake/
+│   └── FindTensorRT.cmake
+├── configs/
+│   ├── capture_imx900.yaml        # exposure 0.2–0.5 ms, FPS, ROI
+│   ├── capture_imx676.yaml
+│   ├── detector_yolov8n.yaml      # input size, NMS, conf thresh
+│   └── trt_build.yaml             # FP16/INT8, workspace, DLA off by default
+├── capture/
+│   ├── include/capture/
+│   │   ├── frame.hpp              # NVMM/CUDA buffer + t_pps + meta
+│   │   ├── argus_capture.hpp
+│   │   └── v4l2_capture.hpp       # fallback / USB debug cams
+│   └── src/
+│       ├── argus_capture.cpp
+│       ├── v4l2_capture.cpp
+│       └── pps_stamp.cpp          # latch PPS ↔ frame mid-exposure
+├── detect/
+│   ├── include/detect/
+│   │   ├── detector.hpp           # Frame in → DetectionBatch out
+│   │   ├── trt_engine.hpp
+│   │   └── preprocess.hpp         # CUDA letterbox / normalize
+│   └── src/
+│       ├── detector.cpp
+│       ├── trt_engine.cpp
+│       ├── preprocess.cu
+│       └── postprocess.cu         # NMS on GPU where possible
+├── iface/
+│   ├── include/iface/
+│   │   └── box_message.hpp        # DetectionMsg → Tracking (SPSC shm / ZMQ)
+│   └── src/
+│       └── box_publisher.cpp
+├── tools/                         # Python only
+│   ├── dataset/
+│   │   ├── ingest_raw.py
+│   │   ├── label_qc.py
+│   │   └── split_sets.py
+│   ├── train/
+│   │   └── launch_train.py        # export → ONNX
+│   └── eval/
+│       ├── metrics_pr.py
+│       └── latency_bench.py
+├── models/
+│   ├── onnx/                      # export artifacts (git-lfs / artifact store)
+│   └── engines/                   # Orin-built .engine (local only, not committed)
+├── data/                          # manifests only in git; raw via symlink/store
+│   └── manifests/
+│       ├── train.txt
+│       ├── val.txt
+│       └── test.txt
+├── logs/
+│   └── schema.json                # canonical detection log + wire schema
+└── apps/
+    ├── capture_bench              # FPS, drop, exposure verify
+    ├── detect_node                # production: capture→detect→publish
+    └── offline_replay             # bag/video + PPS mock → boxes
