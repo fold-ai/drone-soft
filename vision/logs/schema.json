@@ -1,0 +1,65 @@
+{
+  "title": "vision detection log",
+  "type": "object",
+  "required": [
+    "t_pps",
+    "seq",
+    "cam_id",
+    "src_w",
+    "src_h",
+    "detections"
+  ],
+  "properties": {
+    "t_pps": {
+      "type": "number"
+    },
+    "seq": {
+      "type": "integer"
+    },
+    "cam_id": {
+      "type": "integer",
+      "enum": [0, 1, 2],
+      "description": "EO/Nose=0; THERMAL=1 unused until V1.1; GroundEo=2 (GCS USB/V4L2)"
+    },
+    "source_role": {
+      "type": "string",
+      "enum": ["nose_eo", "ground_eo"],
+      "description": "Optional Frame/log mirror; wire identity is cam_id (GroundEo=2)"
+    },
+    "src_w": {
+      "type": "integer"
+    },
+    "src_h": {
+      "type": "integer"
+    },
+    "latency_ms": {
+      "type": "number"
+    },
+    "dropped_before": {
+      "type": "integer"
+    },
+    "detections": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "properties": {
+          "box": {
+            "type": "object"
+          },
+          "conf": {
+            "type": "number"
+          },
+          "class": {
+            "type": "string"
+          },
+          "class_id": {
+            "type": "integer",
+            "description": "0=shahed_136, 1=geran_2, 2=gerbera (range-test gate)"
+          }
+        }
+      }
+    }
+  },
+  "description": "V1: cam_id 0=Nose EO, 2=Ground EO (GCS). THERMAL=1 reserved V1.1."
+}

@@ -1,0 +1,12 @@
+# V1 G1 EO capture alt sensor class. Thermal path deferred V1.1.
+cam_id: 0
+modality: eo
+fps: 60
+exposure_us_min: 200
+exposure_us_max: 500
+exposure_us: 300
+width: 1920
+height: 1080
+backend: argus
+drop_policy: drop_oldest
+backlog_max: 1

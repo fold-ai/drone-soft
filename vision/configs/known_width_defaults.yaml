@@ -1,0 +1,15 @@
+# Per-class Known-width defaults for EST (placeholders — refine with metrology).
+# Authority: docs/notes/NOSE_EO_TRACK_RANGE_PERCEPTION_PLAN.md §3
+#
+# EST must tag width_source=operator|class_default|calib.
+# Lab bottle width is ALWAYS operator-entered — never use these for bottle tests.
+# Do NOT mix DEMO_GOPRO (~120° HFOV) into LOCK_CAM_A_40MM EST / Known-width calib.
+
+defaults_m:
+  shahed_136: 3.0   # wingspan-class; confirm vs airframe intel
+  geran_2: 2.5      # TBD refine
+  gerbera: 2.0      # TBD refine
+
+notes:
+  bottle: operator   # lab bottle = operator-entered width only
+  status: placeholder

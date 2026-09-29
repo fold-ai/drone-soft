@@ -1,0 +1,5 @@
+precision: fp16   # then int8 if needed
+batch: 1
+workspace_mb: 1024
+dla: false       # off by default
+fixed_shape: [1, 3, 640, 640]

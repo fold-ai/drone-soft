@@ -1,0 +1,32 @@
+{
+  "blockers": [
+    "valid samples 0 < required 50",
+    "capture sessions 0 < required 5"
+  ],
+  "detector_eval": {
+    "note": "Not run: no valid hard-negative samples.",
+    "thresholds": {},
+    "weights": "vision/yolov8n.pt"
+  },
+  "folder": "/Users/zakharbernyk/Downloads/actprove-drone/vision/data/inbox/negative",
+  "generated_at": "2026-09-19T16:10:31.608875+00:00",
+  "minimum_samples": 50,
+  "minimum_sessions": 5,
+  "note": "Offline audit only; this report does not enable tracking or flight control.",
+  "samples": {
+    "capture_sessions": 0,
+    "corrupt": 0,
+    "corrupt_files": [],
+    "cue_classes": {},
+    "duplicates": 0,
+    "files": 0,
+    "frames_per_session": {},
+    "median_height": null,
+    "median_width": null,
+    "reasons": {},
+    "valid": 0
+  },
+  "schema_version": 1,
+  "scope": "passive_nose_eo_hard_negatives",
+  "status": "BLOCKED"
+}

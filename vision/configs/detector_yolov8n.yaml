@@ -1,0 +1,14 @@
+input_w: 640
+input_h: 640
+conf_thresh: 0.25
+nms_iou: 0.45
+max_det: 32
+# V1 G1: EO-only single stream
+cam_id: 0   # EO; THERMAL=1 unused until V1.1
+# Range-test primary class map (class-gated Lock)
+classes:
+  - shahed_136   # 0
+  - geran_2      # 1
+  - gerbera      # 2
+# Legacy optional (NOT in V1 range-test Lock gate): quad, fixed_wing
+engine: models/engines/yolov8n_fp16.engine

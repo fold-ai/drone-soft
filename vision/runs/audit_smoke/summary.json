@@ -1,0 +1,8 @@
+{
+  "weights": "runs/detect_range_v1/train_e3/weights/best.pt",
+  "source_manifest": "data/manifests/val.txt",
+  "images_requested": 12,
+  "images_processed": 12,
+  "detections": 18,
+  "jsonl": "runs/audit_smoke/predictions.jsonl"
+}

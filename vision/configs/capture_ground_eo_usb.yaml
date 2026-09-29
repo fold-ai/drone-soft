@@ -1,0 +1,17 @@
+# Ground EO — GCS laptop USB/V4L2 (NOT Orin nose GMSL).
+# Includes GoPro Webcam Mode (UVC) and other USB webcams; GCS UI also uses browser getUserMedia for live preview.
+# Perception-owned ingest; GCS only toggles Nose EO | Ground EO and emits cue/BDA.
+# Aligns with docs/notes/GROUND_EO_CUE_AND_BDA.md and System stack wiring.
+device: /dev/video0
+fps: 30
+width: 1920
+height: 1080
+cam_id: 2              # CamId::GroundEo
+source_role: ground_eo
+backend: v4l2
+modality: eo
+host: gcs_laptop       # not Orin
+drop_policy: drop_oldest
+backlog_max: 1
+# Manual Lock: operator aims + designate box → DetectionMsg with cam_id=2, conf=1.0
+# Do NOT lock from map pin.

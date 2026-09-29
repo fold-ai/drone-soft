@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "range_v1",
+  "description": "V1 range-test Lock class map. Exported for Tracking + detector deploy.",
+  "nc": 3,
+  "names": {
+    "0": "shahed_136",
+    "1": "geran_2",
+    "2": "gerbera"
+  },
+  "gate": [
+    0,
+    1,
+    2
+  ],
+  "legacy_not_in_gate": {
+    "10": "quad",
+    "11": "fixed_wing"
+  },
+  "source_yaml": "vision/configs/classes_range_v1.yaml"
+}

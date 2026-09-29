@@ -1,0 +1,12 @@
+# Alias of capture_ground_eo_usb.yaml — Ground EO on GCS V4L2.
+device: /dev/video0
+fps: 30
+width: 1920
+height: 1080
+cam_id: 2              # CamId::GroundEo (not nose EO=0)
+source_role: ground_eo
+backend: v4l2
+modality: eo
+host: gcs_laptop
+drop_policy: drop_oldest
+backlog_max: 1

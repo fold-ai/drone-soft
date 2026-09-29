@@ -1,0 +1,5 @@
+epochs=3
+device=cpu
+best=/workspace/actprove-drone/vision/runs/detect_range_v1/train_e3/weights/best.pt
+onnx_stub=/workspace/actprove-drone/vision/models/onnx/yolov8n_range_v1.onnx
+classes=shahed_136,geran_2,gerbera

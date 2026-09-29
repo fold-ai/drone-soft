@@ -1,0 +1,21 @@
+# YOLOv8n training defaults for class-gated Lock (EO)
+model: yolov8n.pt
+imgsz: 640
+batch: 8
+epochs: 30
+device: cpu  # override: cuda:0 / 0 on Orin/GPU hosts
+workers: 4
+optimizer: auto
+# Hyp pointers (ultralytics defaults unless overridden at CLI)
+hsv_h: 0.015
+hsv_s: 0.7
+hsv_v: 0.4
+degrees: 0.0
+translate: 0.1
+scale: 0.5
+fliplr: 0.5
+mosaic: 1.0
+# Project layout (relative to vision/training/)
+project: runs
+# Class map: see classes.yaml
+classes: classes.yaml

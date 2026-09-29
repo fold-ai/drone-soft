@@ -1,0 +1,12 @@
+# JAI GOX-5103M-USB + Kowa LM50HC — first-test capture
+# USB3 Vision, not UVC. Python preview: tools/first_test_hdmi_preview.py (Aravis).
+device: usb3vision
+sku: GOX-5103M-USB
+pixel_format: Mono8
+width: 2448
+height: 2048
+fps: 30
+cam_id: 0
+hfov_deg: 10.0
+lens: Kowa LM50HC 50mm F1.4
+notes: Global shutter IMX264 2/3". Power over USB or Hirose 10–25 V.

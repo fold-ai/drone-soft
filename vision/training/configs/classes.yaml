@@ -1,0 +1,8 @@
+# Class-gated Lock — V1 range-test classes only
+# Auto Lock allowed only for class_id in {0, 1, 2}
+nc: 3
+names:
+  0: shahed_136
+  1: geran_2
+  2: gerbera
+# Legacy ids (NOT in Lock gate): quad=10, fixed_wing=11

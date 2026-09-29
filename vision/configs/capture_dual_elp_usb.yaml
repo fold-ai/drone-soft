@@ -1,0 +1,17 @@
+# ELP AR0234 USB3 SEARCH + TELE. Both streams are EO (wire cam_id=0);
+# camera_role distinguishes them internally. TELE is optional during bring-up.
+search:
+  device: /dev/video0
+  width: 1920
+  height: 1080
+  fps: 60
+  pixel_format: YUYV
+  role: search
+tele:
+  device: /dev/video1
+  width: 1920
+  height: 1080
+  fps: 60
+  pixel_format: YUYV
+  role: tele
+allow_single_camera: true

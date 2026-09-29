@@ -1,0 +1,11 @@
+# V1 range-test YOLO / Lock class map (primary)
+# Lock allowed only if class_id is in this set (or operator-forced class).
+names:
+  0: shahed_136
+  1: geran_2
+  2: gerbera
+# Legacy / optional (documented only — not in V1 range-test list):
+#   10: quad
+#   11: fixed_wing
+nc: 3
+gate: [0, 1, 2]

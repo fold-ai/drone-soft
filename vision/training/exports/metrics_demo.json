@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "run": {
+    "id": "demo-run",
+    "started_at": "2026-01-01T00:00:00Z",
+    "model": "yolov8n.pt",
+    "epochs": 10,
+    "git_sha": null,
+    "notes": "Sample export generated with --demo."
+  },
+  "metrics": [
+    {
+      "run_id": "demo-run",
+      "split": "val",
+      "map50": 0.91,
+      "map50_95": 0.67,
+      "per_class": {
+        "shahed_136": {
+          "ap50": 0.93
+        },
+        "geran_2": {
+          "ap50": 0.89
+        },
+        "gerbera": {
+          "ap50": 0.91
+        }
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "run_id": "demo-run",
+      "kind": "weights",
+      "storage_path": "vision/training/runs/demo-run/weights/best.pt"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+# EST / HFOV calib profiles — DO NOT mix DEMO FoV into Lock Cam A
+# Authority: docs/hardware/NOSE_EO_JET_BLUR_FOV_NOTES.md
+
+profiles:
+  DEMO_GOPRO:
+    lock_eligible: false
+    label: DEMO
+    optic: gopro_class
+    hfov_deg: 120.0
+    exposure_ms_typical: 1.0   # illustrative; not for jet
+    notes: Lab Mac Nose EO only. Never use for Cam A EST defaults.
+
+  LOCK_CAM_A_40MM:
+    lock_eligible: true
+    label: LOCK
+    optic: basler_a2A1920-168mgm_40mm
+    sku: a2A1920-168mgm
+    focal_mm: 40
+    hfov_deg: 10.0            # ~9.5–10° Tracking stamp
+    exposure_ms_hard_max: 0.5
+    exposure_ms_jet_prefer: 0.1
+    notes: Flight Lock path. Separate calib UI profile from DEMO_GOPRO.
+
+  ELP_AR0234_SEARCH_100DEG:
+    lock_eligible: false
+    calibrated: false
+    label: SEARCH
+    optic: elp_ar0234_usb3_wide
+    focal_mm: 2.8
+    hfov_deg: 100.0           # provisional; replace through Calibrate FOV
+    exposure_ms_hard_max: 1.0
+    notes: ELP SEARCH bring-up profile. Calibrate the received unit before range use.
+
+  ELP_AR0234_TELE_50MM:
+    lock_eligible: false      # becomes true only after stored intrinsic/extrinsic calibration
+    calibrated: false
+    label: TELE_TEST
+    optic: elp_ar0234_usb3_5_50mm
+    focal_mm: 50
+    hfov_deg: 7.0             # provisional planning value; never use as measured truth
+    exposure_ms_hard_max: 0.5
+    notes: ELP TELE test profile. Run FOV and SEARCH-to-TELE extrinsic calibration first.
+
+  JAI_GOX5103_KOWA50:
+    lock_eligible: true
+    calibrated: false
+    label: LOCK_JAI50
+    optic: jai_gox_5103m_usb_kowa_lm50hc
+    sku: GOX-5103M-USB
+    focal_mm: 50
+    sensor: IMX264_2_3
+    src_w: 2448
+    src_h: 2048
+    hfov_deg: 10.0            # Kowa 2/3" table; measure on the received unit
+    exposure_ms_hard_max: 2.0
+    notes: USB3 Vision (not UVC). First-test HDMI preview uses this HFOV.

@@ -1,0 +1,30 @@
+# Lock acceptance vs detector scores (V1 range-test)
+# Used by Tracking auto-Lock path. Operator Manual Lock uses conf=1.0 + image box.
+version: 1
+class_map: vision/training/exports/class_map_range_v1.json
+
+# Box must pass ALL of:
+accept:
+  # Class id must be in exported gate [0,1,2]
+  class_gate: [0, 1, 2]
+  # Minimum detector confidence (YOLO score)
+  min_conf: 0.45
+  # Minimum box area in full-sensor pixels (reject tiny noise / full-frame junk separately)
+  min_box_area_px: 64
+  # Reject boxes that cover almost the entire frame (provisional label smell)
+  max_box_area_frac: 0.85
+  # Optional: min side length
+  min_box_side_px: 6
+
+# Tracker confirmation (after a box is accept-eligible)
+track:
+  confirm_hits: 3
+  lock_quality_min: 0.6
+  conf_min_associate: 0.25   # association floor (below accept still ignored for NEW lock)
+  handoff_conf_min: 0.30
+
+# Manual / Ground EO Lock (operator)
+manual:
+  conf: 1.0
+  require_image_box: true
+  class_must_be_in_gate: true
