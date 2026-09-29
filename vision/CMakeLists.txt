@@ -25,6 +25,7 @@ target_compile_definitions(vision_detect PUBLIC $<$<BOOL:${SOFT_NO_JETPACK}>:SOF
 
 if(NOT SOFT_NO_JETPACK)
   enable_language(CUDA)
+ find_package(CUDAToolkit REQUIRED)
   find_package(TensorRT REQUIRED)
   target_link_libraries(vision_detect PUBLIC TensorRT::NvInfer CUDA::cudart)
 endif()
