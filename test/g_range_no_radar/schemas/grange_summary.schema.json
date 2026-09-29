@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "grange_summary.schema.json",
+  "title": "G-range no-radar summary",
+  "type": "object",
+  "required": [
+    "card_id", "result", "radar_used", "manual_lock_image_box",
+    "work_gated_search", "bda_mark", "recovery", "archive_path"
+  ],
+  "properties": {
+    "card_id": { "const": "G-RANGE-NR-V1" },
+    "result": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "radar_used": { "const": false },
+    "manual_lock_image_box": { "type": "boolean" },
+    "map_pin_lock": { "type": "boolean", "description": "true = FAIL" },
+    "work_gated_search": { "type": "boolean" },
+    "close_was_commanded_miss": { "type": "boolean" },
+    "hit_profile": { "type": "boolean", "description": "true = FAIL" },
+    "bda_mark": {
+      "type": "string",
+      "enum": ["TARGET_DESTROYED", "MISS", "REATTACK", "NONE"]
+    },
+    "auto_kill_declared": { "type": "boolean", "description": "true = FAIL" },
+    "recovery": { "type": "string", "enum": ["RTB", "LAND_SOFT", "ABORT", "FTS", "NONE"] },
+    "fail_reasons": { "type": "array", "items": { "type": "string" } },
+    "archive_path": { "type": "string" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,9 @@
+{
+  "gate": "G1",
+  "run_id": "bench01",
+  "started_at": "2026-09-18T14:30:00-05:00",
+  "operator": "test",
+  "git_sha": "deadbeef",
+  "fts_holder": null,
+  "airspeed_source": "na_ground"
+}

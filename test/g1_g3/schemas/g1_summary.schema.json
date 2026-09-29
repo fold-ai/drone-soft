@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "g1_summary.schema.json",
+  "title": "G1 summary",
+  "type": "object",
+  "required": [
+    "gate", "result", "detector_hz_sustained", "frame_to_box_ms_p95",
+    "pps_frames_ok", "pps_imu_ok", "windows_scored", "archive_path"
+  ],
+  "properties": {
+    "gate": { "const": "G1" },
+    "result": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "detector_hz_sustained": { "type": "number", "minimum": 0 },
+    "frame_to_box_ms_p95": { "type": "number", "minimum": 0 },
+    "pps_frames_ok": { "type": "boolean" },
+    "pps_imu_ok": { "type": "boolean" },
+    "windows_scored": { "type": "integer", "minimum": 1 },
+    "fail_reasons": { "type": "array", "items": { "type": "string" } },
+    "archive_path": { "type": "string" }
+  },
+  "additionalProperties": true
+}

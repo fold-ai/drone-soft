@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sortie.schema.json",
+  "title": "G3 sortie record",
+  "type": "object",
+  "required": [
+    "sortie_id", "valid", "lock_s", "commanded_miss_m",
+    "ownship_kmh_max", "target_kmh", "miss_source"
+  ],
+  "properties": {
+    "sortie_id": { "type": "string" },
+    "valid": { "type": "boolean" },
+    "lock_s": { "type": "number", "minimum": 8, "maximum": 15, "description": "Duration in LOCK only" },
+    "commanded_miss_m": { "type": "number", "minimum": 15, "maximum": 30 },
+    "ownship_kmh_max": { "type": "number", "minimum": 150, "maximum": 200 },
+    "target_kmh": { "type": "number", "minimum": 80, "maximum": 120 },
+    "miss_source": { "type": "string", "description": "e.g. range_radar, gps_diff, onboard_estimate" },
+    "hit_profile": { "type": "boolean", "description": "if true, sortie invalid" },
+    "invalid_reason": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

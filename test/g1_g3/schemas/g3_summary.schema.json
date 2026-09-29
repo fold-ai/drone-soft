@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "g3_summary.schema.json",
+  "title": "G3 summary (campaign)",
+  "type": "object",
+  "required": [
+    "gate", "result", "fts_holder", "valid_sorties", "required_sorties",
+    "ownship_kmh_max_observed", "target_kmh_nominal", "archive_path"
+  ],
+  "properties": {
+    "gate": { "const": "G3" },
+    "result": { "type": "string", "enum": ["PASS", "FAIL", "RED"] },
+    "fts_holder": { "type": "string", "minLength": 1 },
+    "valid_sorties": { "type": "integer", "minimum": 0 },
+    "required_sorties": { "const": 10 },
+    "ownship_kmh_max_observed": { "type": "number" },
+    "target_kmh_nominal": { "type": "number" },
+    "envelope_frozen": { "type": "boolean", "description": "true while result is RED" },
+    "fail_reasons": { "type": "array", "items": { "type": "string" } },
+    "archive_path": { "type": "string" }
+  },
+  "additionalProperties": true
+}

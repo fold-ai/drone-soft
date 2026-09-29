@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "grange_manifest.schema.json",
+  "title": "G-range no-radar run manifest",
+  "type": "object",
+  "required": [
+    "card_id", "run_id", "started_at", "operator", "fts_holder",
+    "radar_used", "eo_source", "test_recover", "git_sha"
+  ],
+  "properties": {
+    "card_id": { "const": "G-RANGE-NR-V1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string" },
+    "operator": { "type": "string" },
+    "fts_holder": { "type": "string", "minLength": 1 },
+    "radar_used": { "const": false },
+    "eo_source": { "type": "string", "enum": ["ground", "nose", "ground_then_nose"] },
+    "test_recover": { "type": "integer", "enum": [0, 1] },
+    "git_sha": { "type": "string" },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": true
+}

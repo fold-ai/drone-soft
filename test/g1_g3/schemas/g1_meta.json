@@ -1,0 +1,1 @@
+{"gate":"G1","required":["camera_ts","boxes","frame_to_box_ms","detector_hz","imu_ts"]}

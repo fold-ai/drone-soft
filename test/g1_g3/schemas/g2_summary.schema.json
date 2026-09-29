@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "g2_summary.schema.json",
+  "title": "G2 summary",
+  "type": "object",
+  "required": [
+    "gate", "result", "fts_holder", "heading_in_fc_log",
+    "work_gated_search", "valid_setpoint_count", "states_seen", "archive_path"
+  ],
+  "properties": {
+    "gate": { "const": "G2" },
+    "result": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "fts_holder": { "type": "string", "minLength": 1 },
+    "heading_in_fc_log": { "type": "boolean" },
+    "valid_setpoint_count": { "type": "integer", "minimum": 1 },
+    "fc_excerpt_path": { "type": "string" },
+    "work_gated_search": { "type": "boolean", "description": "true if SEARCH only entered via WORK" },
+    "states_seen": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["BOOT", "SEARCH", "LOCK", "CLOSE", "ABORT", "RTB", "FTS"]
+      }
+    },
+    "fts_scripted": { "type": "boolean" },
+    "fts_idle_asserted": { "type": ["boolean", "null"] },
+    "fts_surfaces_fixed": { "type": ["boolean", "null"] },
+    "fts_fuel_cut_asserted": { "type": ["boolean", "null"] },
+    "fail_reasons": { "type": "array", "items": { "type": "string" } },
+    "archive_path": { "type": "string" }
+  },
+  "additionalProperties": true
+}

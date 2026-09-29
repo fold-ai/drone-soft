@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "run_manifest.schema.json",
+  "title": "Gate run manifest",
+  "type": "object",
+  "required": ["gate", "run_id", "started_at", "operator", "git_sha", "fts_holder", "airspeed_source"],
+  "properties": {
+    "gate": { "type": "string", "enum": ["G1", "G2", "G3"] },
+    "run_id": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string", "description": "ISO-8601 local or UTC with offset" },
+    "operator": { "type": "string" },
+    "git_sha": { "type": "string" },
+    "fts_holder": {
+      "type": ["string", "null"],
+      "description": "Named FTS holder. null only allowed for G1. G2/G3 with null = cannot schedule."
+    },
+    "airspeed_source": {
+      "type": "string",
+      "enum": ["pitot", "gps_groundspeed", "na_ground"],
+      "description": "na_ground for G1/G2 engine-off; never invent numbers"
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": true
+}
