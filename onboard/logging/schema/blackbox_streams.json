@@ -1,0 +1,60 @@
+{
+  "name": "actprove_blackbox",
+  "version": "1",
+  "capacity_note": "NVMe sized for >=1-2 h continuous at V1 rates (camera_ts @ 60 Hz, tracks @ 60 Hz, ownship @ 50 Hz, mavlink_tx @ 20 Hz).",
+  "root": "/data/blackbox/YYYYMMDD_HHMMSS_<id>/",
+  "files": {
+    "meta.json": "run identity, git sha, ICD version",
+    "camera_ts.jsonl": {
+      "measurement_epoch_ns": "int64 PPS mid-exposure",
+      "publish_time_ns": "int64 debug",
+      "seq": "uint64",
+      "cam_id": "uint8 NoseEO=0 THERMAL=1 GroundEo=2",
+      "exposure_us": "float"
+    },
+    "tracks.jsonl": {
+      "track_id": "uint32",
+      "measurement_epoch_ns": "int64 \u2014 coast keeps last real measurement epoch",
+      "publish_time_ns": "int64",
+      "lock_quality": "float 0..1",
+      "state": "uint8",
+      "cam_id": "uint8"
+    },
+    "ownship.jsonl": {
+      "measurement_epoch_ns": "int64",
+      "airspeed_mps": "float",
+      "heading_rad": "float",
+      "alt_m": "float"
+    },
+    "mavlink_tx.jsonl": {
+      "publish_time_ns": "int64",
+      "vx": "float",
+      "vy": "float",
+      "vz": "float",
+      "yaw": "float",
+      "type_mask": "uint16"
+    },
+    "mission_state.jsonl": {
+      "state": "BOOT|SEARCH|LOCK|CLOSE|ABORT|RTB|FTS",
+      "t_pps": "float64"
+    },
+    "boxes.jsonl": "optional mirror of DetectionMsg for G1",
+    "bda.jsonl": {
+      "publish_time_ns": "int64",
+      "cmd": "TARGET_DESTROYED|MISS|REATTACK (UX labels; wire string for miss/reattack is MISS/REATTACK)",
+      "mission_state": "BOOT|SEARCH|LOCK|CLOSE|ABORT|RTB|FTS",
+      "video_source": "nose|ground"
+    },
+    "gcs_events.jsonl": {
+      "optional": true,
+      "publish_time_ns": "int64",
+      "event": "video_source_changed",
+      "video_source": "nose|ground",
+      "note": "GCS-side / demo events mirrored into blackbox when available"
+    }
+  },
+  "rules": [
+    "Never block capture thread \u2014 async queue on hot path (TODO: ring + writer thread).",
+    "Soft now() forbidden for measurement_epoch fields."
+  ]
+}

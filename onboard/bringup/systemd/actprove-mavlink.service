@@ -1,0 +1,14 @@
+[Unit]
+Description=ActProve Orin↔FC MAVLink bridge (TELEM2 @ 57600)
+After=actprove-logging.service
+Requires=actprove-time-sync.service
+
+[Service]
+Type=simple
+Environment=ACTPROVE_TELEM2=/dev/ttyTHS1
+Environment=ACTPROVE_TELEM2_BAUD=57600
+ExecStart=/bin/sh -c 'echo "mavlink backend not implemented; refusing readiness" >&2; exit 1'
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

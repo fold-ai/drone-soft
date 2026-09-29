@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!-- ROS2-style launch sketch (optional). Prefer systemd on Orin.
+     Order: time_sync → logging → mavlink → safety → perception.
+     Cameras MUST NOT start until PPS ready. -->
+<launch>
+  <arg name="telem2_port" default="/dev/ttyTHS1"/>
+  <arg name="telem2_baud" default="57600"/>
+  <arg name="blackbox_root" default="/data/blackbox"/>
+
+  <!-- Placeholders: replace with real composable nodes when packaged. -->
+  <group>
+    <set_env name="ACTPROVE_TELEM2" value="$(var telem2_port)"/>
+    <set_env name="ACTPROVE_TELEM2_BAUD" value="$(var telem2_baud)"/>
+    <set_env name="ACTPROVE_BLACKBOX" value="$(var blackbox_root)"/>
+  </group>
+
+  <!-- Example executable hooks (commented until nodes exist):
+  <executable cmd="time_sync_daemon" output="screen"/>
+  <executable cmd="blackbox_daemon" output="screen"/>
+  <executable cmd="mavlink_bridge --port $(var telem2_port) --baud $(var telem2_baud)" output="screen"/>
+  -->
+</launch>

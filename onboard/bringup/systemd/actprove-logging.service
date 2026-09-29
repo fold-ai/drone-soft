@@ -1,0 +1,13 @@
+[Unit]
+Description=ActProve NVMe black-box logger
+After=actprove-time-sync.service
+Requires=actprove-time-sync.service
+
+[Service]
+Type=simple
+Environment=ACTPROVE_BLACKBOX=/data/blackbox
+ExecStart=/bin/sh -c 'echo "logging daemon not implemented; refusing readiness" >&2; exit 1'
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

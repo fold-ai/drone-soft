@@ -1,0 +1,13 @@
+[Unit]
+Description=ActProve PPS time_sync (must be before cameras)
+After=local-fs.target
+Before=actprove-logging.service actprove-mavlink.service
+
+[Service]
+Type=simple
+Environment=ACTPROVE_ROOT=/opt/drone-soft
+ExecStart=/bin/sh -c 'echo "time_sync backend not implemented; refusing readiness" >&2; exit 1'
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
