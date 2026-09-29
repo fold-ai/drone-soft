@@ -1,0 +1,35 @@
+# EO ↔ IMU lever-arm / time-offset — Navigation owns the process;
+# System stack hosts this tool path (V1_PLAN §4).
+#
+# Frames: body/IMU = ADIS16470; EO = Basler optical center (rigid mount).
+# Units: metres, radians, seconds. All in PPS time domain — no soft now().
+
+version: 1
+rig_id: eo_imu_v1
+
+imu_frame: imu_adis
+eo_frame: eo_basler
+
+# Translation of EO origin expressed in IMU frame (m)
+lever_arm_imu_m:
+  x: 0.050
+  y: 0.000
+  z: 0.020
+
+# Rotation IMU → EO (intrinsic XYZ RPY, rad) — placeholder identity
+rpy_imu_to_eo_rad:
+  roll: 0.0
+  pitch: 0.0
+  yaw: 0.0
+
+# Time offset: t_eo = t_imu + t_offset_s (estimate via flash / PPS FSYNC)
+t_offset_s: 0.0
+
+# Uncertainty (1σ) — fill after calib
+sigma_lever_m: 0.005
+sigma_rpy_rad: 0.01
+sigma_t_s: 0.0005
+
+notes: |
+  Rigid EO↔IMU mount required. Do not recalibrate after each flight unless
+  mount torque check fails. Process owned by Navigation.
