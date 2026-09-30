@@ -1,7 +1,5 @@
 #include "companion/app.hpp"
 
-#include "mavlink_v1_cmds.h"
-
 #include <algorithm>
 #include <cmath>
 
@@ -37,6 +35,10 @@ void CompanionApp::reset() {
   status_ = {};
   src_w_ = 0;
   src_h_ = 0;
+  last_yaw_rad_ = 0.f;
+  have_yaw_ = false;
+  searching_ = false;
+  search_t0_s_ = 0.0;
   homing_ = {};
 }
 
@@ -88,6 +90,14 @@ void CompanionApp::on_fc_heartbeat(bool armed, uint32_t custom_mode, double now_
   last_fc_hb_s_ = now_s;
 }
 
+void CompanionApp::on_attitude(float roll_rad, float pitch_rad, float yaw_rad) {
+  (void)roll_rad;
+  (void)pitch_rad;
+  if (!std::isfinite(yaw_rad)) return;
+  last_yaw_rad_ = yaw_rad;
+  have_yaw_ = true;
+}
+
 void CompanionApp::tick(double now_s) {
   const actprove::TrackMsg& tr = tracker_.track();
   status_.intent = rc_.last;
@@ -95,6 +105,7 @@ void CompanionApp::tick(double now_s) {
   status_.track_id = tr.track_id;
   status_.lock_quality = tr.lock_quality;
   status_.track_ok = track_ok_for_close(tr);
+  status_.have_yaw = have_yaw_;
 
   const bool lost_link =
       last_fc_hb_s_ < 0.0 || (now_s - last_fc_hb_s_) > cfg_.lost_link_s;
@@ -110,40 +121,63 @@ void CompanionApp::tick(double now_s) {
 
   homing_ = {};
   status_.setpoint_valid = false;
-  status_.vx = status_.vy = status_.vz = 0.f;
+  status_.roll_rad = 0.f;
+  status_.pitch_rad = 0.f;
+  status_.throttle = 0.f;
   status_.range_est_m = 0.f;
 
   if (!can_guide) {
+    searching_ = false;
     status_.phase = CompanionPhase::Manual;
-    status_.mission_state = 0;  // BOOT / manual
+    status_.mission_state = 0;  // pilot sticks
     if (rc_.last == RcIntent::Abort) status_.mission_state = 5;  // RTB
     return;
   }
 
   if (status_.track_ok) {
-    homing_ = image_homing(tr, src_w_, src_h_, cfg_.homing);
+    searching_ = false;
+    HomingConfig homing = cfg_.homing;
+    if (tr.class_id == 0) homing.known_width_m = cfg_.homing.balloon_width_m;
+    homing_ = image_homing(tr, src_w_, src_h_, homing);
     status_.setpoint_valid = homing_.valid;
-    status_.vx = homing_.vx;
-    status_.vy = homing_.vy;
-    status_.vz = homing_.vz;
+    status_.roll_rad = homing_.roll_rad;
+    status_.pitch_rad = homing_.pitch_rad;
+    status_.throttle = homing_.throttle;
     status_.range_est_m = homing_.range_est_m;
     status_.phase = CompanionPhase::Close;
     status_.mission_state = 3;  // CLOSE
-  } else {
-    status_.phase = CompanionPhase::Search;
-    status_.mission_state = 1;  // SEARCH
+    return;
   }
+
+  if (!searching_) {
+    searching_ = true;
+    search_t0_s_ = now_s;
+  }
+  const float period = std::max(2.f, cfg_.homing.search_period_s);
+  const float phase = static_cast<float>(now_s - search_t0_s_);
+  const float sweep =
+      std::sin(2.f * static_cast<float>(M_PI) * phase / period);
+  const float bank =
+      cfg_.homing.search_bank_deg * static_cast<float>(M_PI) / 180.f;
+  const float trim =
+      cfg_.homing.trim_pitch_deg * static_cast<float>(M_PI) / 180.f;
+  status_.roll_rad = bank * sweep;
+  status_.pitch_rad = trim;
+  status_.throttle = std::max(0.f, std::min(1.f, cfg_.homing.cruise_throttle));
+  status_.setpoint_valid = true;
+  status_.phase = CompanionPhase::Search;
+  status_.mission_state = 1;  // SEARCH
 }
 
-mavlink_bridge::LocalNedSetpoint CompanionApp::setpoint() const {
-  mavlink_bridge::LocalNedSetpoint sp;
-  if (!status_.setpoint_valid) return sp;
-  sp.vx = status_.vx;
-  sp.vy = status_.vy;
-  sp.vz = status_.vz;
-  sp.type_mask = AP_TYPEMASK_BODY_VEL;
-  sp.coordinate_frame = AP_MAV_FRAME_BODY_NED;
-  return sp;
+PlaneAttitude CompanionApp::attitude() const {
+  PlaneAttitude out;
+  if (!status_.setpoint_valid) return out;
+  out.roll_rad = status_.roll_rad;
+  out.pitch_rad = status_.pitch_rad;
+  out.yaw_rad = last_yaw_rad_;
+  out.throttle = status_.throttle;
+  out.valid = true;
+  return out;
 }
 
 }  // namespace actprove::companion

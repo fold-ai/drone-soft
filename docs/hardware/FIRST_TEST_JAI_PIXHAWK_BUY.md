@@ -7,7 +7,7 @@
 
 | Item | Role in first test |
 |------|--------------------|
-| **Pixhawk 6C** | FC. Flash **ArduCopter** (quad) or ArduPlane (FW). TELEM2 → Orin. |
+| **Pixhawk 6C** | FC. Flash **ArduPlane**. TELEM3 → Orin. TELEM1 is DJI, TELEM2 is 3DR. |
 | **TBS Tango 2 + Nano RX** | Crossfire sticks + **CH7 Lock / CH8 Takeover**. Companion reads `RC_CHANNELS` from the FC, so Crossfire is fine (ELRS not required). |
 | **3DR 433 MHz radio** | Thin MAVLink to Mission Planner. **Cannot carry video.** |
 | **GPS** | FC GPS. Do not share with Orin for this test. |
@@ -28,7 +28,7 @@ Do **not** wait on Forecr / GMSL / RFD900 / thermal.
 | 2 | **Orin cooler / heatsink fan** | 15–30 W sustained, more with USB cam + infer | Comes with some kits; buy if the module is bare. |
 | 3 | **HDMI monitor + HDMI cable** | This is how you **see Lock** on the bench | Plug into the carrier **before** boot. First-test HUD is `tools/first_test_hdmi_preview.py`. |
 | 4 | **USB 3.0 SuperSpeed cable** | JAI GOX USB port is typically **USB3 Micro-B** | Use a short, thick, **SS** cable (blue tongue). Phone USB2 cables will not work. |
-| 5 | **Pixhawk TELEM2 ↔ Orin UART cable** | Companion MAVLink | Holybro 6-pin JST-GH. **3.3 V UART, common ground, do not connect 5 V into Orin TX.** Baud **57600**. |
+| 5 | **Pixhawk TELEM3 ↔ Orin UART cable** | Companion MAVLink | Holybro 6-pin JST-GH. **TX, RX, GND only. Do not connect pin 1 (+5 V) into the Orin.** Baud **57600**. On the FC this port is SERIAL5. |
 | 6 | **Orin power from the pack** | Pixhawk **cannot** power Orin | 9–19 V class, **≥5 A / ~60 W** UBEC or the carrier’s barrel/XT30 input. Separate from servo BEC. |
 | 7 | **Laptop + Mission Planner / QGC** | 3DR 433 C2, mode, logs | You likely already have this. |
 | 8 | **Weather balloons + helium** | First cooperative target | Bright / high-contrast. `--known-width 1.2`. |
@@ -68,7 +68,7 @@ Pilot O4 ──► goggles     ← fly the aircraft only
 # Orin desktop, monitor already plugged in
 sudo apt-get install -y python3-opencv python3-gi gir1.2-aravis-0.8
 export DISPLAY=:0
-python3 /opt/drone-soft/tools/first_test_hdmi_preview.py \
+python3 /opt/actprove-drone/tools/first_test_hdmi_preview.py \
   --hfov 10 --known-width 1.2 --target balloon
 ```
 

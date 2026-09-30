@@ -121,38 +121,23 @@ def range_from_width(box_w_px: float, frame_w: int, known_w: float, hfov_deg: fl
     return (known_w * focal) / box_w_px
 
 
-def find_airborne_blobs(gray: "np.ndarray", target: str) -> List[Box]:
-    """Sky-background blobs when YOLO has no balloon/tiny-quad class yet."""
-    h, w = gray.shape[:2]
-    blur = cv2.GaussianBlur(gray, (7, 7), 0)
-    if target == "balloon":
-        # White/bright envelope against sky or trees.
-        mask = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-        if float(np.mean(gray)) > 140:
-            mask = cv2.threshold(blur, max(180, int(np.percentile(gray, 92))), 255, cv2.THRESH_BINARY)[1]
-    else:
-        # Small drone: dark silhouette on bright sky.
-        sky = float(np.median(gray[: max(8, h // 3), :]))
-        thresh = max(20, min(120, int(sky * 0.55)))
-        mask = cv2.threshold(blur, thresh, 255, cv2.THRESH_BINARY_INV)[1]
-        # Ignore the ground band.
-        mask[int(h * 0.72) :, :] = 0
-
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+def _boxes_from_mask(mask: "np.ndarray", class_id: int, min_side: int, roundish: bool) -> List[Box]:
+    h, w = mask.shape[:2]
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     boxes: List[Box] = []
-    min_side = 8 if target == "drone" else 14
     for contour in contours:
         x, y, bw, bh = cv2.boundingRect(contour)
         if bw < min_side or bh < min_side:
             continue
+        if y + bh > int(h * 0.88):
+            continue
         area = float(bw * bh)
-        if area < 80 or area > 0.45 * w * h:
+        if area < 80 or area > 0.35 * w * h:
             continue
         ext = cv2.contourArea(contour) / area
         if ext < 0.25:
             continue
-        if target == "balloon":
+        if roundish:
             ratio = bw / float(bh)
             if ratio < 0.45 or ratio > 2.2:
                 continue
@@ -163,10 +148,39 @@ def find_airborne_blobs(gray: "np.ndarray", target: str) -> List[Box]:
                 w=float(bw),
                 h=float(bh),
                 conf=min(0.99, 0.35 + 0.5 * ext),
-                class_id=0,
+                class_id=class_id,
             )
         )
-    boxes.sort(key=lambda b: b.w * b.h, reverse=True)
+    return boxes
+
+
+def find_airborne_blobs(gray: "np.ndarray", target: str) -> List[Box]:
+    """One camera, sky only. class 0 = bright balloon, class 1 = dark UAV."""
+    h, w = gray.shape[:2]
+    blur = cv2.GaussianBlur(gray, (7, 7), 0)
+    boxes: List[Box] = []
+    want_balloon = target in ("balloon", "sky")
+    want_drone = target in ("drone", "sky")
+    if want_balloon:
+        if float(np.mean(gray)) > 140:
+            bright = cv2.threshold(blur, max(180, int(np.percentile(gray, 92))), 255, cv2.THRESH_BINARY)[1]
+        else:
+            bright = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+        boxes.extend(_boxes_from_mask(bright, 0, 14, True))
+        # A white flying wing is bright and wide. Round balloons stay class 0.
+        for box in _boxes_from_mask(bright, 1, 8, False):
+            ratio = box.w / max(1.0, box.h)
+            if 2.2 < ratio <= 8.0:
+                boxes.append(box)
+    if want_drone:
+        sky = float(np.median(gray[: max(8, h // 3), :]))
+        thresh = max(20, min(120, int(sky * 0.55)))
+        dark = cv2.threshold(blur, thresh, 255, cv2.THRESH_BINARY_INV)[1]
+        dark[int(h * 0.72) :, :] = 0
+        dark = cv2.morphologyEx(dark, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+        boxes.extend(_boxes_from_mask(dark, 1, 8, False))
+    boxes.sort(key=lambda b: b.conf, reverse=True)
     return boxes[:8]
 
 
@@ -213,6 +227,24 @@ def pick_lock(boxes: Sequence[Box], frame_w: int, frame_h: int) -> Optional[Box]
     return best
 
 
+def draw_lock_square(vis: "np.ndarray", box: Box, color: tuple, thick: int) -> None:
+    cx = int(box.x + 0.5 * box.w)
+    cy = int(box.y + 0.5 * box.h)
+    side = int(max(box.w, box.h, 28))
+    half = side // 2
+    x1, y1, x2, y2 = cx - half, cy - half, cx + half, cy + half
+    arm = max(10, side // 5)
+    for px, py, sx, sy in (
+        (x1, y1, 1, 1),
+        (x2, y1, -1, 1),
+        (x1, y2, 1, -1),
+        (x2, y2, -1, -1),
+    ):
+        cv2.line(vis, (px, py), (px + sx * arm, py), color, thick)
+        cv2.line(vis, (px, py), (px, py + sy * arm), color, thick)
+    cv2.drawMarker(vis, (cx, cy), color, cv2.MARKER_CROSS, max(16, side // 3), 1)
+
+
 def draw_hud(
     bgr: "np.ndarray",
     boxes: List[Box],
@@ -220,6 +252,7 @@ def draw_hud(
     *,
     target: str,
     range_m: float,
+    width_m: float,
     hits: int,
     source: str,
     fps: float,
@@ -233,17 +266,25 @@ def draw_hud(
         cv2.rectangle(vis, p1, p2, (0, 180, 0), 1)
     locked = hits >= 2 and lock is not None
     if lock is not None:
-        p1 = (int(lock.x), int(lock.y))
-        p2 = (int(lock.x + lock.w), int(lock.y + lock.h))
         color = (0, 0, 255) if locked else (0, 165, 255)
-        cv2.rectangle(vis, p1, p2, color, 3 if locked else 2)
-        label = "LOCK" if locked else "HOLD"
-        cv2.putText(vis, label, (p1[0], max(24, p1[1] - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+        draw_lock_square(vis, lock, color, 3 if locked else 2)
+        kind = "BALLOON" if lock.class_id == 0 else "WING"
+        label = ("LOCK " if locked else "HOLD ") + kind
+        cv2.putText(
+            vis,
+            label,
+            (int(lock.x), max(24, int(lock.y) - 8)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.9,
+            color,
+            2,
+        )
     range_txt = "--" if not math.isfinite(range_m) else f"{range_m:.0f}m"
+    size_txt = "--" if width_m <= 0 else f"{width_m:.2f}m"
     lines = [
         f"ACTPROVE first test  src={source}  target={target}",
-        f"fps={fps:.1f}  hits={hits}  range~{range_txt}  HDMI HUD",
-        "O4 goggles = pilot only. This monitor is the Lock picture.",
+        f"fps={fps:.1f}  hits={hits}  size={size_txt}  range~{range_txt}",
+        "Square is the lock. Center crosshair is the nose. O4 is pilot only.",
     ]
     y = 28
     for line in lines:
@@ -256,9 +297,10 @@ def draw_hud(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--webcam", type=int, default=-1, help="UVC index; omit for JAI/Aravis")
-    parser.add_argument("--target", choices=("balloon", "drone"), default="balloon")
+    parser.add_argument("--target", choices=("sky", "balloon", "drone"), default="sky")
+    parser.add_argument("--headless", action="store_true", help="no HDMI window; still publishes IPC")
     parser.add_argument("--hfov", type=float, default=10.0)
-    parser.add_argument("--known-width", type=float, default=0.0, help="override meters; balloon=1.2 drone=0.35")
+    parser.add_argument("--known-width", type=float, default=0.0, help="override meters; balloon=1.2 wing=1.0")
     parser.add_argument("--yolo", default="", help="optional yolov8 .pt path")
     parser.add_argument("--ipc", default="", help="optional APD1 unix datagram path")
     parser.add_argument("--record", default="", help="optional mp4 path")
@@ -270,7 +312,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    known = args.known_width if args.known_width > 0 else (1.2 if args.target == "balloon" else 0.35)
+    known = args.known_width
     if args.webcam >= 0:
         source: FrameSource = WebcamSource(args.webcam, args.width, args.height)
         source_name = f"webcam{args.webcam}"
@@ -286,11 +328,12 @@ def main() -> int:
 
     publisher = UnixDetectionPublisher(args.ipc) if args.ipc else None
     writer = None
-    cv2.namedWindow(args.display, cv2.WINDOW_NORMAL)
-    try:
-        cv2.setWindowProperty(args.display, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    except Exception:
-        pass
+    if not args.headless:
+        cv2.namedWindow(args.display, cv2.WINDOW_NORMAL)
+        try:
+            cv2.setWindowProperty(args.display, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        except Exception:
+            pass
 
     seq = 0
     hits = 0
@@ -321,41 +364,47 @@ def main() -> int:
                 hits = max(0, hits - 1)
                 if hits == 0:
                     last_lock = None
+            width_m = known if known > 0 else (1.2 if last_lock is not None and last_lock.class_id == 0 else 1.0)
             range_m = (
-                range_from_width(last_lock.w, w, known, args.hfov) if last_lock is not None else float("nan")
+                range_from_width(last_lock.w, w, width_m, args.hfov) if last_lock is not None else float("nan")
             )
-            vis = draw_hud(
-                grab.bgr,
-                boxes,
-                last_lock,
-                target=args.target,
-                range_m=range_m,
-                hits=hits,
-                source=source_name,
-                fps=fps,
-            )
-            if writer is None and args.record:
-                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-                writer = cv2.VideoWriter(args.record, fourcc, 20.0, (vis.shape[1], vis.shape[0]))
-            if writer is not None:
-                writer.write(vis)
+            if not args.headless:
+                vis = draw_hud(
+                    grab.bgr,
+                    boxes,
+                    last_lock,
+                    target=args.target,
+                    range_m=range_m,
+                    width_m=width_m,
+                    hits=hits,
+                    source=source_name,
+                    fps=fps,
+                )
+                if writer is None and args.record:
+                    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+                    writer = cv2.VideoWriter(args.record, fourcc, 20.0, (vis.shape[1], vis.shape[0]))
+                if writer is not None:
+                    writer.write(vis)
+                cv2.imshow(args.display, vis)
+                key = cv2.waitKey(1) & 0xFF
+                if key in (ord("q"), 27):
+                    break
+                if key == ord("f"):
+                    cv2.setWindowProperty(args.display, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
             if publisher is not None:
                 seq += 1
+                # One box: the sky target nearest the crosshair. Companion locks that.
                 msg = DetectionMsg(
                     t_pps=time.time(),
                     seq=seq,
                     cam_id=0,
                     src_w=w,
                     src_h=h,
-                    boxes=boxes[:32],
+                    boxes=[last_lock] if last_lock is not None else [],
                 )
                 publisher.publish(msg)
-            cv2.imshow(args.display, vis)
-            key = cv2.waitKey(1) & 0xFF
-            if key in (ord("q"), 27):
-                break
-            if key == ord("f"):
-                cv2.setWindowProperty(args.display, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
+            if args.headless:
+                time.sleep(0.01)
             window_n += 1
             now = time.time()
             if now - window_t >= 1.0:

@@ -36,15 +36,25 @@ HomingOutput image_homing(const actprove::TrackMsg& track, uint16_t src_w,
     out.range_est_m = std::numeric_limits<float>::quiet_NaN();
   }
 
-  float speed = std::max(1.f, cfg.close_speed_mps);
-  if (std::isfinite(out.range_est_m) && out.range_est_m < 8.f) {
-    speed = std::max(6.f, speed * (out.range_est_m / 8.f));
+  const float max_bank = deg_to_rad(std::max(5.f, cfg.max_bank_deg));
+  const float pitch_up = deg_to_rad(std::max(2.f, cfg.max_pitch_up_deg));
+  const float pitch_dn = deg_to_rad(std::max(2.f, cfg.max_pitch_down_deg));
+  const float trim = deg_to_rad(cfg.trim_pitch_deg);
+  out.roll_rad = clampf(cfg.roll_gain * out.az_rad, -max_bank, max_bank);
+  out.pitch_rad = clampf(trim - cfg.pitch_gain * out.el_rad, -pitch_dn, pitch_up);
+
+  // A box in the frame means the target is inside the 1 km camera range.
+  // Accelerate immediately and steer in the same command. Search (no box)
+  // stays at cruise so the turbine is not opened on an empty sky.
+  const float cruise = clampf(cfg.cruise_throttle, 0.f, 1.f);
+  const float chase = clampf(std::max(cruise, cfg.chase_throttle), 0.f, 1.f);
+  const float far_m = std::max(100.f, cfg.range_far_m);
+  float effort = 1.f;
+  if (std::isfinite(out.range_est_m)) {
+    const float far_frac = clampf(out.range_est_m / far_m, 0.f, 1.f);
+    effort = std::max(0.75f, far_frac);
   }
-  out.vx = speed;
-  out.vy = clampf(cfg.kp_az * out.az_rad * speed, -cfg.max_lateral_mps,
-                  cfg.max_lateral_mps);
-  out.vz = clampf(cfg.kp_el * out.el_rad * speed, -cfg.max_lateral_mps,
-                  cfg.max_lateral_mps);
+  out.throttle = cruise + effort * (chase - cruise);
   out.valid = true;
   return out;
 }

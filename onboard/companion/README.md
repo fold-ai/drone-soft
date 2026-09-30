@@ -2,23 +2,25 @@
 
 Binary: `onboard/build/actprove_companion`
 
-This is the process that may be loaded onto Orin **with UART to the Cube/ArduPilot TELEM2**. It is not the camera-only observer.
+This is the process that may be loaded onto Orin **with UART to Pixhawk TELEM3**. TELEM1 is DJI, TELEM2 is the 3DR. It is not the camera-only observer.
 
 ```
-pilot (12ch RX) ──► FC ──MAVLink RC_CHANNELS──► Orin companion
-cameras ──► dual_detect_node ──IPC──► companion ──GUIDED vel──► FC
-                 Lock CH7 latch                  Takeover CH8 always wins
+pilot sticks ──► Pixhawk ──RC_CHANNELS + ATTITUDE──► companion
+camera box  ──IPC──► companion ──ArduPlane GUIDED attitude──► Pixhawk
+                 Lock CH7                              Takeover CH8 → FBWA
 ```
+
+Plane only. Lock switches to ArduPlane GUIDED (mode 15) and sends bank, pitch, and throttle. The two rear flaperons stay mixed on the Pixhawk (elevon functions 77/78 if they are the only surfaces). Companion does not drive servo PWM.
 
 ## RC map (1-based)
 
 | Switch | Default channel | PWM | Effect |
 |--------|-----------------|-----|--------|
-| **Lock** | CH7 | ≥1700 | Latch: Orin takes GUIDED and flies at the box |
-| **Takeover** | CH8 | ≥1700 | Clears latch, SET_MODE STABILIZE, sticks live |
-| Abort (optional) | `--abort-ch 6` | ≥1700 | RTL + clear latch |
+| **Lock** | CH7 | ≥1700 | Latch. No box yet: slow ±12° bank search. Box in frame: bank and pitch to put it on the nose, throttle holds cruise, plane flies through. |
+| **Takeover** | CH8 | ≥1700 | Clears latch, SET_MODE FBWA (5), sticks live for the landing |
+| Abort (optional) | `--abort-ch 6` | ≥1700 | Plane RTL (mode 11) + clear latch |
 
-Lock is latched: a momentary button still holds intercept until Takeover.
+Lock stays latched until Takeover. Releasing the Lock switch does not give the sticks back.
 
 ## Build (Orin ARM64)
 
@@ -45,13 +47,12 @@ Companion **binds** `/run/actprove/detections.sock`. Do **not** run `actprove-pa
 ./onboard/build/actprove_companion \
   --port /dev/ttyTHS1 --baud 57600 \
   --ipc /run/actprove/detections.sock \
-  --lock-ch 7 --takeover-ch 8 --speed 18 --hfov 10 --known-width 0.35
+  --lock-ch 7 --takeover-ch 8 --throttle 0.08 --bank 25 --hfov 10 --known-width 0.35
 
-# 2) vision publishes boxes
-./vision/build/dual_detect_node \
-  --search /dev/video0 --tele /dev/video1 \
-  --engine /opt/drone-soft/vision/models/engines/yolov8n_fp16.engine \
-  --frames 0 --ipc /run/actprove/detections.sock
+# 2) one JAI camera publishes the sky box
+python3 /opt/drone-soft/tools/first_test_hdmi_preview.py \
+  --headless --target sky --hfov 10 \
+  --ipc /run/actprove/detections.sock
 ```
 
-Until a dedicated `test_drone` TensorRT engine exists, companion defaults to **any class** that passes box geometry (operator already pointed the nose). Rebuild the engine on Orin; do not copy a desktop `.engine`.
+One camera only. Companion takes the single box nearest the crosshair.

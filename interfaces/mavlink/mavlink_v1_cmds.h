@@ -21,12 +21,23 @@ extern "C" {
 #define AP_COPTER_MODE_RTL        6u
 #define AP_COPTER_MODE_LAND       9u
 
+/* ArduPlane custom_mode. This airframe is a plane, not a quad. */
+#define AP_PLANE_MODE_MANUAL      0u
+#define AP_PLANE_MODE_STABILIZE   2u
+#define AP_PLANE_MODE_FBWA        5u
+#define AP_PLANE_MODE_RTL         11u
+#define AP_PLANE_MODE_GUIDED      15u
+
 #define AP_MAV_MODE_FLAG_CUSTOM_MODE_ENABLED 1u
 #define AP_MAV_MODE_FLAG_SAFETY_ARMED        128u
 
 #define AP_MSG_SET_MODE              11u
+#define AP_MSG_ATTITUDE              30u
 #define AP_MSG_RC_CHANNELS           65u
 #define AP_MSG_REQUEST_DATA_STREAM   66u
+#define AP_MSG_SET_ATTITUDE_TARGET   82u
+/* Ignore body rates. Use the quaternion (roll/pitch/yaw) and throttle. */
+#define AP_ATTITUDE_IGNORE_RATES     7u
 #define AP_MAV_DATA_STREAM_RC_CHANNELS 3u
 #define AP_MAV_DATA_STREAM_EXTRA1      10u
 #define AP_MAV_FRAME_LOCAL_NED         1u

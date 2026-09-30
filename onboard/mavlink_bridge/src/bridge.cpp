@@ -20,7 +20,9 @@ namespace {
 constexpr uint8_t kMavlinkV1Stx = 0xfe;
 constexpr uint8_t kMsgHeartbeat = 0;
 constexpr uint8_t kMsgSetMode = 11;
+constexpr uint8_t kMsgAttitude = 30;
 constexpr uint8_t kMsgRcChannels = 65;
+constexpr uint8_t kMsgSetAttitudeTarget = 82;
 constexpr uint8_t kMsgRequestDataStream = 66;
 constexpr uint8_t kMsgSetPositionTargetLocalNed = 84;
 constexpr uint8_t kMsgCommandLong = 76;
@@ -28,7 +30,9 @@ constexpr uint8_t kMsgCommandAck = 77;
 constexpr uint8_t kMsgNamedValueInt = 252;
 constexpr uint8_t kCrcHeartbeat = 50;
 constexpr uint8_t kCrcSetMode = 89;
+constexpr uint8_t kCrcAttitude = 39;
 constexpr uint8_t kCrcRcChannels = 118;
+constexpr uint8_t kCrcSetAttitudeTarget = 49;
 constexpr uint8_t kCrcRequestDataStream = 148;
 constexpr uint8_t kCrcSetPositionTargetLocalNed = 143;
 constexpr uint8_t kCrcCommandLong = 152;
@@ -46,7 +50,9 @@ uint8_t crc_extra_for(uint8_t msgid) {
   switch (msgid) {
     case kMsgHeartbeat: return kCrcHeartbeat;
     case kMsgSetMode: return kCrcSetMode;
+    case kMsgAttitude: return kCrcAttitude;
     case kMsgRcChannels: return kCrcRcChannels;
+    case kMsgSetAttitudeTarget: return kCrcSetAttitudeTarget;
     case kMsgRequestDataStream: return kCrcRequestDataStream;
     case kMsgSetPositionTargetLocalNed: return kCrcSetPositionTargetLocalNed;
     case kMsgCommandLong: return kCrcCommandLong;
@@ -220,6 +226,34 @@ void Bridge::send_mission_state(uint8_t state) {
   (void)send_frame(kMsgNamedValueInt, payload.data(), payload.size(), kCrcNamedValueInt);
 }
 
+void euler_to_quat(float roll, float pitch, float yaw, float q[4]) {
+  const float cr = std::cos(roll * 0.5f);
+  const float sr = std::sin(roll * 0.5f);
+  const float cp = std::cos(pitch * 0.5f);
+  const float sp = std::sin(pitch * 0.5f);
+  const float cy = std::cos(yaw * 0.5f);
+  const float sy = std::sin(yaw * 0.5f);
+  q[0] = cr * cp * cy + sr * sp * sy;
+  q[1] = sr * cp * cy - cr * sp * sy;
+  q[2] = cr * sp * cy + sr * cp * sy;
+  q[3] = cr * cp * sy - sr * sp * cy;
+}
+
+void Bridge::send_attitude_target(const AttitudeTarget& target) {
+  std::array<uint8_t, 39> payload{};
+  put_le<uint32_t>(payload.data(), 0, monotonic_millis());
+  float q[4];
+  euler_to_quat(target.roll_rad, target.pitch_rad, target.yaw_rad, q);
+  for (int i = 0; i < 4; ++i) put_le<float>(payload.data(), 4 + i * 4, q[i]);
+  const float throttle = std::max(0.f, std::min(1.f, target.throttle));
+  put_le<float>(payload.data(), 32, throttle);
+  payload[36] = cfg_.target_sysid;
+  payload[37] = cfg_.target_compid;
+  payload[38] = static_cast<uint8_t>(AP_ATTITUDE_IGNORE_RATES);
+  (void)send_frame(kMsgSetAttitudeTarget, payload.data(), payload.size(),
+                   kCrcSetAttitudeTarget);
+}
+
 void Bridge::send_setpoint(const LocalNedSetpoint& sp) {
   std::array<uint8_t, 53> payload{};
   put_le<uint32_t>(payload.data(), 0, monotonic_millis());
@@ -380,6 +414,12 @@ size_t Bridge::ingest_bytes(const uint8_t* data, size_t size) {
             event.type = RxEventType::CommandAck;
             event.command = get_le<uint16_t>(impl_->payload.data(), 0);
             event.result = impl_->payload[2];
+            emit = true;
+          } else if (impl_->msgid == kMsgAttitude && impl_->length >= 28) {
+            event.type = RxEventType::Attitude;
+            event.roll = get_le<float>(impl_->payload.data(), 4);
+            event.pitch = get_le<float>(impl_->payload.data(), 8);
+            event.yaw = get_le<float>(impl_->payload.data(), 12);
             emit = true;
           } else if (impl_->msgid == kMsgRcChannels && impl_->length >= 42) {
             event.type = RxEventType::RcChannels;

@@ -1,28 +1,33 @@
-# Cube Orange / ArduCopter — Orin companion on TELEM2
-# Load after a standard copter param set. Review in Mission Planner before flight.
-# RC: CH7 = Lock, CH8 = Takeover (PWM ≥1700). Pilot sticks always present on the RX.
+# Pixhawk 6C / ArduPlane — Orin companion on TELEM3 (SERIAL5).
+# TELEM1 = DJI, TELEM2 = 3DR. Do not put the Orin on those.
+# UART only: TX, RX, GND. Do not feed TELEM3 pin 1 (+5 V) into the Orin.
+# Final airframe is a flying wing. The plane that has already flown is a
+# normal wing. Companion sends bank + pitch + throttle either way.
+# Both surfaces up = nose up. Leave the existing servo directions.
+# Cruise is 5–10% throttle at about 100 km/h. Battery in the airframe is 4S.
+# Map a rear momentary button to CH7 (Lock) and Switch D to CH8 (Takeover).
+# Leave Switch B as the flight-mode switch. It will fight GUIDED if reused.
 
-SERIAL2_PROTOCOL    2
-SERIAL2_BAUD        57
+SERIAL5_PROTOCOL    2
+SERIAL5_BAUD        57
 SYSID_MYGCS         255
 
-# Stream RC and attitude to the companion (also requested at runtime)
-SR2_EXTRA1          10
-SR2_RCCHAN          10
-SR2_POSITION        4
-SR2_EXT_STAT        2
+# RC channels and ATTITUDE (yaw) to the companion
+SR5_EXTRA1          10
+SR5_RCCHAN          10
+SR5_POSITION        4
+SR5_EXT_STAT        2
 
-# GUIDED velocity from companion (body frame)
+# GUIDED attitude from companion. Takeover returns FBWA (mode 5).
+# Keep the plane's own LIM_ROLL / LIM_PITCH at least 25° bank,
+# 12° nose-up and 10° nose-down. Companion commands stay inside that.
 GUID_TIMEOUT        3.0
 
-# Failsafe: radio loss → RTL. Companion loss is also handled in software (3 s).
+# Failsafe: radio loss → RTL (plane mode 11). Companion loss is also 3 s.
 FS_THR_ENABLE       1
 FS_THR_VALUE        975
 FS_OPTIONS          0
 
-# Keep RC override available so Takeover/sticks can reclaim immediately
+# CH7/CH8 are companion buttons, not ArduPilot flight-mode functions
 RC7_OPTION          0
 RC8_OPTION          0
-
-# Do not require a mission for GUIDED
-AUTO_OPTIONS        0

@@ -30,11 +30,11 @@ void print_status(const actprove::companion::CompanionStatus& st, bool fc_open) 
   if (st.phase == actprove::companion::CompanionPhase::Close) phase = "CLOSE";
   std::printf(
       "METRIC phase=%s intent=%u lock=%d armed=%d track=%d guided=%d "
-      "fc_open=%d vx=%.2f vy=%.2f vz=%.2f range=%.1f q=%.2f id=%u\n",
+      "fc_open=%d roll_deg=%.1f pitch_deg=%.1f thr=%.2f range=%.1f q=%.2f id=%u\n",
       phase, static_cast<unsigned>(st.intent), st.lock_latched ? 1 : 0,
       st.armed ? 1 : 0, st.track_ok ? 1 : 0, st.want_guided ? 1 : 0,
-      fc_open ? 1 : 0, st.vx, st.vy, st.vz, st.range_est_m, st.lock_quality,
-      st.track_id);
+      fc_open ? 1 : 0, st.roll_rad * 57.2958f, st.pitch_rad * 57.2958f,
+      st.throttle, st.range_est_m, st.lock_quality, st.track_id);
   std::fflush(stdout);
 }
 }  // namespace
@@ -63,7 +63,10 @@ int main(int argc, char** argv) {
     else if (a == "--lock-ch") app_cfg.rc.lock_ch = std::atoi(need("--lock-ch"));
     else if (a == "--takeover-ch") app_cfg.rc.takeover_ch = std::atoi(need("--takeover-ch"));
     else if (a == "--abort-ch") app_cfg.rc.abort_ch = std::atoi(need("--abort-ch"));
-    else if (a == "--speed") app_cfg.homing.close_speed_mps = std::strtof(need("--speed"), nullptr);
+    else if (a == "--speed") (void)need("--speed");  // plane uses --throttle
+    else if (a == "--throttle") app_cfg.homing.cruise_throttle = std::strtof(need("--throttle"), nullptr);
+    else if (a == "--chase") app_cfg.homing.chase_throttle = std::strtof(need("--chase"), nullptr);
+    else if (a == "--bank") app_cfg.homing.max_bank_deg = std::strtof(need("--bank"), nullptr);
     else if (a == "--hfov") app_cfg.homing.hfov_deg = std::strtof(need("--hfov"), nullptr);
     else if (a == "--known-width") app_cfg.homing.known_width_m = std::strtof(need("--known-width"), nullptr);
     else if (a == "--smoke") {
@@ -84,13 +87,14 @@ int main(int argc, char** argv) {
     }
     else if (a == "--help") {
       std::puts(
-          "actprove_companion — Orin Lock/Takeover intercept loop\n"
+          "actprove_companion — plane Lock/Takeover (ArduPlane GUIDED attitude)\n"
           "  --port /dev/ttyTHS1  --baud 57600  --ipc /run/actprove/detections.sock\n"
           "  --lock-ch 7  --takeover-ch 8  --abort-ch 6\n"
-          "  --speed 18  --hfov 10  --known-width 0.35\n"
-          "  balloon first test: --known-width 1.2 --hfov 10\n"
+          "  --throttle 0.08  --chase 0.90  --bank 25  --hfov 10  --known-width 1.0\n"
+          "  balloon: --known-width 1.2 --hfov 10\n"
           "  --smoke   host dry-run (no UART)\n"
-          "Takeover always returns stick control. Lock latches until Takeover.");
+          "Lock: search the camera, then bank/pitch toward the box.\n"
+          "Takeover: FBWA, sticks live. The FC mixes the two flaperons.");
       return 0;
     }
   }
@@ -122,6 +126,8 @@ int main(int argc, char** argv) {
                           ev.custom_mode, now_s());
     } else if (ev.type == actprove::mavlink_bridge::RxEventType::RcChannels) {
       app.on_rc(ev.rc_raw, ev.rc_count ? ev.rc_count : 18);
+    } else if (ev.type == actprove::mavlink_bridge::RxEventType::Attitude) {
+      app.on_attitude(ev.roll, ev.pitch, ev.yaw);
     }
   });
 
@@ -135,7 +141,8 @@ int main(int argc, char** argv) {
     for (auto& c : ch) c = 1500;
     ch[6] = 1900;  // CH7 Lock
     app.on_rc(ch, 18);
-    app.on_fc_heartbeat(true, AP_COPTER_MODE_STABILIZE, now_s());
+    app.on_fc_heartbeat(true, AP_PLANE_MODE_FBWA, now_s());
+    app.on_attitude(0.f, 0.f, 0.4f);
     actprove::DetectionMsg det{};
     det.t_pps = 1.0;
     det.src_w = 1920;
@@ -182,6 +189,7 @@ int main(int argc, char** argv) {
       }
       if (t - last_stream >= 2.0) {
         bridge.request_data_stream(AP_MAV_DATA_STREAM_RC_CHANNELS, 10, true);
+        bridge.request_data_stream(AP_MAV_DATA_STREAM_EXTRA1, 10, true);
         last_stream = t;
       }
     }
@@ -209,7 +217,7 @@ int main(int argc, char** argv) {
     if (fc_open && mode_cmd != last_mode_cmd) {
       if (mode_cmd == 2) {
         bridge.send_rtb();
-        bridge.send_set_mode(AP_COPTER_MODE_RTL,
+        bridge.send_set_mode(AP_PLANE_MODE_RTL,
                              AP_MAV_MODE_FLAG_CUSTOM_MODE_ENABLED |
                                  (st.armed ? AP_MAV_MODE_FLAG_SAFETY_ARMED : 0));
       } else if (mode_cmd == 1) {
@@ -224,8 +232,15 @@ int main(int argc, char** argv) {
       last_mode_cmd = mode_cmd;
     }
 
-    if (fc_open && st.want_guided && st.setpoint_valid && t - last_sp >= 1.0 / 15.0) {
-      bridge.send_setpoint(app.setpoint());
+    if (fc_open && st.want_guided && st.setpoint_valid && st.have_yaw &&
+        t - last_sp >= 1.0 / 15.0) {
+      const auto att = app.attitude();
+      actprove::mavlink_bridge::AttitudeTarget wire;
+      wire.roll_rad = att.roll_rad;
+      wire.pitch_rad = att.pitch_rad;
+      wire.yaw_rad = att.yaw_rad;
+      wire.throttle = att.throttle;
+      bridge.send_attitude_target(wire);
       last_sp = t;
     }
 

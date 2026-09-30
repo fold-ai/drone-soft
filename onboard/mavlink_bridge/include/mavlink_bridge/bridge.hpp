@@ -23,6 +23,15 @@ struct BridgeConfig {
   bool allow_flight_termination{false};
 };
 
+/// SET_ATTITUDE_TARGET for a fixed-wing: bank, nose angle, throttle.
+/// Yaw is the aircraft's current yaw so the FC is not commanded onto north.
+struct AttitudeTarget {
+  float roll_rad{0.f};
+  float pitch_rad{0.f};
+  float yaw_rad{0.f};
+  float throttle{0.f};  // 0..1
+};
+
 /// SET_POSITION_TARGET_LOCAL_NED — velocity (optionally yaw).
 struct LocalNedSetpoint {
   float vx{0.f};
@@ -38,6 +47,7 @@ enum class RxEventType : uint8_t {
   CommandLong,
   CommandAck,
   RcChannels,
+  Attitude,
 };
 
 struct RxEvent {
@@ -53,6 +63,9 @@ struct RxEvent {
   uint8_t autopilot{0};
   uint8_t rc_count{0};
   uint16_t rc_raw[18]{};
+  float roll{0.f};
+  float pitch{0.f};
+  float yaw{0.f};
 };
 
 class Bridge {
@@ -66,6 +79,7 @@ class Bridge {
   void send_heartbeat();
   void send_mission_state(uint8_t state);  // NAMED_VALUE_INT MISSION_STATE 0..6
   void send_setpoint(const LocalNedSetpoint& sp);
+  void send_attitude_target(const AttitudeTarget& target);
   void send_set_mode(uint32_t custom_mode, uint8_t base_mode);
   void send_command_long(uint16_t command, float param1, float param2 = 0.f,
                          float param3 = 0.f, float param4 = 0.f,
